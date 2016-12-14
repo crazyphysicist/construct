@@ -327,7 +327,7 @@ namespace Construction {
 
                         // Set all entries in the row to zero
                         for (int j = 0; j < system.first.GetNumberOfColumns(); ++j) {
-                            system.first(i, j) = 0;
+                            system.first(i, j) = Common::BigNumber(0);
                         }
                     }
                 }

@@ -2451,7 +2451,7 @@ namespace Construction {
 
                         // Set all entries in the row to zero
                         for (int j = 0; j < M.GetNumberOfColumns(); ++j) {
-                            M(i, j) = 0;
+                            M(i, j) = Common::BigNumber(0);
                         }
                     }
                 }

@@ -6,10 +6,16 @@
 #include <iostream>
 #include <random>
 
+#include <common/error.hpp>
 #include <common/serializable.hpp>
 
 namespace Construction {
     namespace Common {
+
+        class OverflowException : public Exception {
+        public:
+            OverflowException() : Exception("The number is too big") { }
+        };
 
         /**
             \class BigNumber
@@ -135,10 +141,12 @@ namespace Construction {
             }
         public:
             bool IsNegative() const {
+                if (values.size() == 0) return false;
                 return (values.back() & (1 << 31)) == (1 << 31);
             }
 
             bool IsPositive() const {
+                if (values.size() == 0) return true;
                 return (values.back() & (1 << 31)) != (1 << 31);
             }
 
@@ -516,7 +524,7 @@ namespace Construction {
             }
 
             static inline BigNumber Divide(const BigNumber& a, const BigNumber& b, BigNumber* rest = nullptr) {
-                if (b == 0) throw std::overflow_error("Division by zero");
+                if (b == BigNumber(0)) throw std::overflow_error("Division by zero");
 
                 if (b.IsNegative()) {
                     BigNumber restCopy;
@@ -530,20 +538,20 @@ namespace Construction {
                     BigNumber restCopy;
                     auto q = Divide(-a, b, &restCopy);
 
-                    if (restCopy == 0) {
+                    if (restCopy == BigNumber(0)) {
                         if (rest) *rest = 0;
                         return -q;
                     }
 
                     if (rest) *rest = b - restCopy;
-                    return -(q+1);
+                    return -(q+BigNumber(1));
                 }
 
                 BigNumber q;
                 BigNumber r = a;
 
                 while (r >= b) {
-                    q = q + 1;
+                    q = q + BigNumber(1);
                     r = r - b;
                 }
 
@@ -707,6 +715,46 @@ namespace Construction {
                     result *= base;
                 }
                 return result;
+            }
+        public:
+            operator unsigned() const {
+                if (values.size() > 1) throw OverflowException();
+                return values[0];
+            }
+
+            operator int() const {
+                if (values.size() > 1) throw OverflowException();
+                return values[0];
+            }
+
+            operator long() const {
+                if (values.size() > sizeof(long) / sizeof(unsigned)) throw OverflowException();
+
+                long output = 0;
+
+                unsigned times = sizeof(long) / sizeof(int);
+                for (int i=0; i<times; ++i) {
+                    output |= (values[i] << (i * 32));
+                }
+
+                return output;
+            }
+
+            operator long long() const {
+                if (values.size() > sizeof(long long) / sizeof(unsigned)) throw OverflowException();
+
+                long long output = 0;
+
+                unsigned times = sizeof(long long) / sizeof(int);
+                for (int i=0; i<times; ++i) {
+                    output |= (values[i] << (i * 32));
+                }
+
+                return output;
+            }
+
+            operator double() const {
+                return static_cast<double>(static_cast<long long>(*this));
             }
         public:
             static BigNumber GetRandomNumber(const BigNumber& lower, const BigNumber& higher) {
